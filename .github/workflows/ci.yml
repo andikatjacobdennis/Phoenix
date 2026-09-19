@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    # Phoenix targets net9.0-windows: it reads the registry, inspects file versions and drives
+    # Windows installers. The integration tests start real processes, so they need Windows too.
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Unit tests
+        run: >
+          dotnet test tests/Phoenix.Tests/Phoenix.Tests.csproj
+          --configuration Release --no-build
+          --logger "trx;LogFileName=unit-tests.trx"
+          --results-directory artifacts/test-results
+
+      - name: Integration tests
+        # These install, launch, health check and roll back a real ASP.NET Core application
+        # inside temporary directories. Nothing machine-wide is touched.
+        run: >
+          dotnet test tests/Phoenix.IntegrationTests/Phoenix.IntegrationTests.csproj
+          --configuration Release --no-build
+          --logger "trx;LogFileName=integration-tests.trx"
+          --results-directory artifacts/test-results
+
+      - name: Verify the release packaging still works
+        run: ./scripts/package.ps1 -Version 0.0.1-ci.${{ github.run_number }} -OutputDirectory artifacts/ci
+        shell: pwsh
+
+      - name: Validate the produced artifacts
+        run: ./scripts/Test-ReleaseArtifacts.ps1 -ArtifactDirectory artifacts/ci
+        shell: pwsh
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-results
+          path: artifacts/test-results
+          if-no-files-found: ignore

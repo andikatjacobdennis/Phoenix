@@ -1,0 +1,12 @@
+<Project>
+
+  <!-- Inherit the repository-wide settings, then relax the rules that only make sense for shipping code. -->
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+  <PropertyGroup>
+    <!-- Underscored test names read better than PascalCase sentences. -->
+    <NoWarn>$(NoWarn);CA1707;CA1869;CA1515;CA5394;CA1852</NoWarn>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+</Project>

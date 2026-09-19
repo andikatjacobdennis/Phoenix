@@ -1,0 +1,119 @@
+{
+  "//": [
+    "Worked prerequisite definitions, one per detection strategy.",
+    "",
+    "Every entry with an Installer:Url also needs an Installer:Sha256, and Phoenix refuses to",
+    "start without one - a checksum you have not verified yourself is worse than none.",
+    "Fill the placeholders in by downloading the installer once and running:",
+    "",
+    "    Get-FileHash .\\the-installer.exe -Algorithm SHA256",
+    "",
+    "Pin a specific installer URL rather than a 'latest' redirect, so the checksum stays valid."
+  ],
+
+  "Phoenix": {
+    "Prerequisites": {
+      "Enabled": true,
+      "InstallMissing": true,
+
+      "Required": [
+        {
+          "//": "Detected by enumerating the shared frameworks; no installer, so Phoenix reports it and stops.",
+          "Id": "aspnetcore-runtime",
+          "DisplayName": ".NET Runtime",
+          "Mandatory": true,
+          "VersionRange": "[9.0,11.0)",
+          "Detection": {
+            "Strategy": "DotNetRuntime",
+            "RuntimeName": "Microsoft.AspNetCore.App"
+          }
+        },
+
+        {
+          "//": "Detected by running the program and reading its output. Installed silently, per user.",
+          "Id": "python",
+          "DisplayName": "Python",
+          "Mandatory": true,
+          "MinimumVersion": "3.11.0",
+          "Detection": {
+            "Strategy": "ExecutableVersion",
+            "Path": "python.exe",
+            "Arguments": "--version",
+            "VersionPattern": "Python (?<version>\\d+\\.\\d+\\.\\d+)"
+          },
+          "Installer": {
+            "Url": "https://www.python.org/ftp/python/3.12.4/python-3.12.4-amd64.exe",
+            "Sha256": "REPLACE_WITH_THE_SHA256_YOU_VERIFIED",
+            "SilentArguments": "/quiet InstallAllUsers=0 PrependPath=1 Include_test=0",
+            "AcceptedExitCodes": [ 0 ],
+            "RebootExitCodes": [ 3010, 1641 ]
+          },
+          "TimeoutSeconds": 900
+        },
+
+        {
+          "//": "Detected in the registry. Machine-wide, so the installer asks for elevation on its own.",
+          "Id": "vcredist-x64",
+          "DisplayName": "Visual C++ Runtime",
+          "Mandatory": false,
+          "MinimumVersion": "14.30.0",
+          "Architecture": "x64",
+          "Detection": {
+            "Strategy": "Registry",
+            "RegistryHive": "HKLM",
+            "RegistryKey": "SOFTWARE\\Microsoft\\VisualStudio\\14.0\\VC\\Runtimes\\x64",
+            "RegistryValue": "Version"
+          },
+          "Installer": {
+            "Url": "https://download.visualstudio.microsoft.com/download/pr/EXAMPLE/vc_redist.x64.exe",
+            "Sha256": "REPLACE_WITH_THE_SHA256_YOU_VERIFIED",
+            "SilentArguments": "/install /quiet /norestart",
+            "AcceptedExitCodes": [ 0, 1638 ],
+            "RebootExitCodes": [ 3010, 1641 ]
+          },
+          "RequiresAdministrator": true
+        },
+
+        {
+          "//": "Detected from a file's version resource.",
+          "Id": "webview2",
+          "DisplayName": "WebView2 Runtime",
+          "Mandatory": false,
+          "MinimumVersion": "120.0.0",
+          "Detection": {
+            "Strategy": "FileVersion",
+            "Path": "%ProgramFiles(x86)%\\Microsoft\\EdgeWebView\\Application\\msedgewebview2.exe"
+          }
+        },
+
+        {
+          "//": "Only checked on QA machines; other environments skip it entirely.",
+          "Id": "node",
+          "DisplayName": "Node.js",
+          "Mandatory": false,
+          "MinimumVersion": "20.0.0",
+          "ApplicableEnvironments": [ "QA" ],
+          "Detection": {
+            "Strategy": "Command",
+            "Path": "node",
+            "Arguments": "--version"
+          }
+        },
+
+        {
+          "//": [
+            "Test-only strategies. AssumeMissing exercises the install path without waiting for",
+            "a real missing component; AssumePresent covers something guaranteed by machine policy."
+          ],
+          "Id": "company-agent",
+          "DisplayName": "Contoso Agent",
+          "Mandatory": false,
+          "MinimumVersion": "2.0.0",
+          "Detection": {
+            "Strategy": "AssumePresent"
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,46 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0-windows</TargetFramework>
+    <RootNamespace>Phoenix.IntegrationTests</RootNamespace>
+    <AssemblyName>Phoenix.IntegrationTests</AssemblyName>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Phoenix.Core\Phoenix.Core.csproj" />
+    <ProjectReference Include="..\..\src\Phoenix.Infrastructure\Phoenix.Infrastructure.csproj" />
+
+    <!--
+      Built, but not referenced as an assembly: the tests package the demo application's build
+      output into a zip and let Phoenix install it, exactly as it would install a real release.
+    -->
+    <ProjectReference Include="..\..\src\Phoenix.DemoApp\Phoenix.DemoApp.csproj"
+                      ReferenceOutputAssembly="false"
+                      Private="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The fake release server is a real Kestrel host, so Phoenix talks real HTTP. -->
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- So the tests can locate the demo application's build output at run time. -->
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>DemoAppOutputDirectory</_Parameter1>
+      <_Parameter2>$(MSBuildThisFileDirectory)..\..\src\Phoenix.DemoApp\bin\$(Configuration)\net9.0\</_Parameter2>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+</Project>
