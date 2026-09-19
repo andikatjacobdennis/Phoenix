@@ -47,5 +47,11 @@ public sealed record UpdateDecision
 
     public ReleaseCandidate? Target => Candidates.Count > 0 ? Candidates[0] : null;
 
+    /// <summary>
+    /// True when the release source could not be reached at all, as opposed to being reached
+    /// and having nothing suitable to offer. The two need very different explanations.
+    /// </summary>
+    public bool SourceUnavailable { get; init; }
+
     public string? Explanation { get; init; }
 }

@@ -430,7 +430,15 @@ public sealed class SpectreUserInterface : IUserInterface
         {
             _ui = ui;
             _label = label;
-            _ui._console.Markup($"{Markup.Escape(label)}");
+
+            // Normally the label is written now and its outcome is appended to the same line
+            // when the work finishes. In diagnostic mode the log sink writes to this console
+            // too, and anything it emits in between would land in the middle of that line -
+            // so there, the whole stage is written as one line once it completes.
+            if (!_ui.DiagnosticMode)
+            {
+                _ui._console.Markup(Markup.Escape(label));
+            }
         }
 
         public void Complete(string? detail = null)
@@ -460,17 +468,22 @@ public sealed class SpectreUserInterface : IUserInterface
 
             _finished = true;
 
+            // In diagnostic mode the label was not written up front, so it is written here as
+            // part of the same line.
+            var prefix = _ui.DiagnosticMode ? Markup.Escape(_label) : string.Empty;
+
             var available = _ui.Width - plainLength - 1;
             var padding = available - _label.Length;
 
             if (padding < 1 || _ui.IsNarrow)
             {
-                _ui._console.MarkupLine($" [{color.ToMarkup()}]{markup}[/]");
+                _ui._console.MarkupLine($"{prefix} [{color.ToMarkup()}]{markup}[/]");
                 return;
             }
 
-            _ui._console.MarkupLine(
-                string.Create(CultureInfo.InvariantCulture, $"{new string(' ', padding)}[{color.ToMarkup()}]{markup}[/]"));
+            _ui._console.MarkupLine(string.Create(
+                CultureInfo.InvariantCulture,
+                $"{prefix}{new string(' ', padding)}[{color.ToMarkup()}]{markup}[/]"));
         }
 
         public void Dispose() => Complete();

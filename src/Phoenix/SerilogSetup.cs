@@ -21,8 +21,10 @@ internal static class SerilogSetup
         "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] [{OperationId}] {Message:lj}" +
         "{NewLine}{Exception}";
 
+    // Plain text: this goes through Serilog's console sink, which has no idea what
+    // Spectre.Console markup is and would print the tags literally.
     private const string ConsoleTemplate =
-        "[grey]{Timestamp:HH:mm:ss}[/] [{Level:u3}] {Message:lj}{NewLine}{Exception}";
+        "{Timestamp:HH:mm:ss} [{Level:u3}] {Message:lj}{NewLine}{Exception}";
 
     public static Logger CreateLogger(
         IConfiguration configuration,

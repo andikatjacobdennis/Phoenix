@@ -186,10 +186,27 @@ public sealed class PhoenixOrchestrator
                     return await LaunchExistingAsync(decision.Installed, cancellationToken).ConfigureAwait(false);
                 }
 
-                var error = PhoenixError.GitHub(
-                    "PX-NO-RELEASE",
-                    $"No installable release was found for channel {_options.Updates.Channel} and nothing is " +
-                    "installed locally.");
+                // Being unable to reach the release source and reaching it to find nothing
+                // published are different problems, and the user can only act on one of them.
+                var error = decision.SourceUnavailable
+                    ? PhoenixError.GitHub(
+                        "PX-NO-RELEASE-SOURCE",
+                        $"The release source could not be reached and nothing is installed locally. " +
+                        $"{decision.Explanation}")
+                    : new PhoenixError
+                    {
+                        Category = ErrorCategory.GitHub,
+                        Code = "PX-NO-RELEASE",
+                        UserMessage =
+                            $"There is nothing to install yet. No {_options.Product.Name} release has been " +
+                            "published for this computer.",
+                        TechnicalMessage =
+                            $"{_options.GitHub.Owner}/{_options.GitHub.Repository} returned no release for " +
+                            $"channel {_options.Updates.Channel} carrying a " +
+                            $"'{ReleaseManifest.DefaultFileName}' asset, and nothing is installed locally.",
+                        ExitCode = ExitCode.InstallationFailure,
+                    };
+
                 _ui.ShowFailure(error, _run.OperationId, _paths.Logs);
                 return error.ExitCode;
         }
@@ -232,6 +249,7 @@ public sealed class PhoenixOrchestrator
             {
                 Action = UpdateAction.NoReleaseAvailable,
                 Installed = installed,
+                SourceUnavailable = true,
                 Explanation = releases.Error.TechnicalMessage,
             };
         }
